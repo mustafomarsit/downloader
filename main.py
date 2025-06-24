@@ -4,47 +4,63 @@ import dotenv
 import asyncio
 import yt_dlp
 import random
+import re
+
+from aiogram import Bot, Dispatcher, types
+from aiogram.filters import Command
 
 dotenv.load_dotenv()
 
-bot = aiogram.Bot(os.getenv("BOT_TOKEN"))
-dp = aiogram.Dispatcher()
+bot = Bot(os.getenv("BOT_TOKEN"))
+dp = Dispatcher()
 
-
+# URL tekshirish funksiyasi
 def is_valid_url(url: str):
-    if url.startswith("https://youtube.com/"):
-        return True
-    else:
-        return False
+    return re.match(
+        r"https?://(www\.)?(youtube\.com|youtu\.be|tiktok\.com|instagram\.com)/[^\s]+",
+        url,
+    ) is not None
 
+# /start komandasi
+@dp.message(Command("start"))
+async def start_command(message: types.Message):
+    await message.answer(
+        "👋 Salom, men siz uchun YouTube,Instagram va TikTok videolarini yuklab beruvchi botman!\n\n"
+        "📥 Linkni yuboring va men sizga videoni yuboraman. 😊"
+    )
 
+# Linkni qabul qilib, video yuklab beruvchi funksiya
 @dp.message()
-async def start_handler(message: aiogram.types.Message):
-    url = message.text
+async def message_handler(message: types.Message):
+    url = message.text.strip()
 
     if is_valid_url(url):
-        filename = random.randint(1, 100)
+        filename = str(random.randint(1, 100))
         opts = {"format": "best", "outtmpl": f"{filename}.%(ext)s"}
 
-        await message.answer("video is downloading, please wait a moment...")
+        await message.answer("⏳ Video yuklanmoqda, biroz kuting...")
 
-        video_info = yt_dlp.YoutubeDL(opts).extract_info(url, download=True)
-
-        video = aiogram.types.FSInputFile(f"{filename}.mp4")
-        await message.answer_video(video, caption=video_info["title"])
-
-        os.remove(f"{filename}.mp4")
+        try:
+            video_info = yt_dlp.YoutubeDL(opts).extract_info(url, download=True)
+            video = types.FSInputFile(f"{filename}.mp4")
+            await message.answer_video(video, caption=f"📹 {video_info['title']}")
+        except Exception as e:
+            await message.answer("❌ Video yuklab olinmadi. Xatolik yuz berdi.")
+            print(e)
+        finally:
+            if os.path.exists(f"{filename}.mp4"):
+                os.remove(f"{filename}.mp4")
     else:
-        await message.answer(f"{url} is not valid url.")
+        await message.answer("🚫 Bu URL noto‘g‘ri ko‘rinadi. Iltimos, to‘g‘ri link yuboring.")
 
-
+# Bot ishga tushganda chiqariladigan funksiya
 def on_start():
-    print("bot has been started...")
+    print("✅ Bot ishga tushdi!")
 
-
+# Asosiy ishga tushirish funksiyasi
 async def main():
     dp.startup.register(on_start)
     await dp.start_polling(bot)
 
-
+# Botni ishga tushirish
 asyncio.run(main())
