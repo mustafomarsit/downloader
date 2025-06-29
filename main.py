@@ -21,13 +21,27 @@ def is_valid_url(url: str):
         url,
     ) is not None
 
-# /start komandasi
 @dp.message(Command("start"))
 async def start_command(message: types.Message):
+    username = message.from_user.username or message.from_user.full_name
     await message.answer(
-        "👋 Salom, men siz uchun YouTube,Instagram va TikTok videolarini yuklab beruvchi botman!\n\n"
+        f"👋 Salom, @{username}!\n\n"
+        "Men siz uchun YouTube, Instagram va TikTok videolarini yuklab beruvchi botman!\n\n"
         "📥 Linkni yuboring va men sizga videoni yuboraman. 😊"
     )
+
+#help komandasi
+@dp.message(Command("help"))
+async def help_command(message: types.Message):
+    await message.answer(
+        "ℹ️ Foydalanish bo‘yicha yordam:\n\n"
+        "1. /start — bot haqida qisqacha ma'lumot\n"
+        "2. /help — yordam oynasi\n"
+        "3. Link yuboring (YouTube, TikTok, Instagram) — men sizga video yuboraman.\n\n"
+        "❗ Iltimos, faqat jamoat (public) videolarni yuboring."
+    )
+
+
 
 # Linkni qabul qilib, video yuklab beruvchi funksiya
 @dp.message()
